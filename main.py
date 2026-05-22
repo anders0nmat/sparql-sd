@@ -1,6 +1,8 @@
 from SPARQLWrapper import SPARQLWrapper, JSON, XML, TURTLE, N3, RDF, RDFXML, CSV, TSV, JSONLD, QueryResult
 from SPARQLWrapper.SPARQLExceptions import SPARQLWrapperException
 from typing import Any
+from argparse import ArgumentParser
+from pathlib import Path
 
 from rdflib import Graph, URIRef, Literal, BNode, Namespace
 from rdflib.namespace import DefinedNamespace, RDF, VOID
@@ -275,9 +277,22 @@ def generate_service_description(endpoint: str, includeVoID=False) -> Graph:
 
     return graph
 
-sd_graph = generate_service_description(
-    'https://opendata.leipzig.de/sparql',
-    includeVoID=True)
+def main():
+    parser = ArgumentParser()
+    parser.add_argument('endpoint', help='A SPARQL endpoint to deduce a service description for')
+    parser.add_argument('--output', '-o', help='Where to redirect the output. Prints to stdout if not specified')
+    parser.add_argument('--void', action='store_true', help='Try to infer VoID data')
+    args = parser.parse_args()
 
-v = sd_graph.serialize(format='turtle')
-print(v)
+    sd_graph = generate_service_description(
+        args.endpoint,
+        includeVoID=args.void)
+
+    v = sd_graph.serialize(format='turtle')
+    if args.output:
+        Path(args.output).write_text(v)
+    else:
+        print(v)
+
+if __name__ == "__main__":
+    main()
